@@ -1,0 +1,126 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500&display=swap');
+
+:root {
+  font-size: 10px;
+  font-family: 'Poppins', sans-serif;
+  --navWidth: 7.5vw;
+  --navWidth2: calc(var(--navWidth) + 12.5vw);
+  --elemWidth: 5vw;
+  --elemMargin: calc((var(--navWidth) - var(--elemWidth)) / 2);
+  --imgSize: 3vw;
+  --gray: rgb(220, 220, 220);
+  --blue: rgb(31, 79, 222);
+  user-select: none;
+}
+
+nav {
+  z-index: 100;
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: var(--navWidth);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, .3);
+  display: flex;
+  flex-direction: column;
+  transition: width .3s ease-in-out;
+  background-color: white;
+}
+
+nav:has(#checkbox:checked) {
+  width: var(--navWidth2);
+}
+
+nav:has(#checkbox:checked) > ul {
+  animation: showOverflow linear .4s forwards;
+}
+
+nav > label#expand {
+  position: absolute;
+  width: var(--elemWidth);
+  aspect-ratio: 1/1;
+  left: var(--elemMargin);
+  top: 1%;
+  margin: auto;
+  cursor: pointer;
+}
+
+label#expand > img {
+  border-radius: 50%;
+  transition: background-color .2s;
+}
+
+nav > ul
+{
+  position: absolute;
+  width: var(--elemWidth);
+  height: 25vh;
+  left: var(--elemMargin);
+  top: 6vw;
+  margin: 0;
+  list-style: none;
+  padding: 0;
+  overflow: hidden;
+  animation: hideOverflow linear .2s forwards;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+}
+
+ul > li
+{
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  font-size: 3rem;
+  border-radius: 10px;
+  transition: color .2s;
+  cursor: pointer;
+}
+
+/* marginLeft = width - 3 */
+ul li:nth-child(1) {
+  width: 12.5vw;
+  margin-left: 9.5vw;
+}
+
+ul li:nth-child(2) {
+  width: 11vw;
+  margin-left: 8vw;
+}
+
+ul li:nth-child(3) {
+  width: 16vw;
+  margin-left: 13vw;
+}
+
+li:hover {
+  color: var(--blue);
+}
+
+li > img
+{
+  object-fit: fill;
+  width: var(--imgSize);
+  aspect-ratio: 1/1;
+  border-radius: 15%;
+  margin-right: 3vw;
+}
+
+li > img:hover, 
+#checkbox:checked ~ ul > li:hover,
+label#expand > img:hover {
+  background-color: var(--gray);
+  transition: background-color .2s;
+}
+
+@keyframes showOverflow {
+  from {overflow: hidden;}
+  to {overflow: visible;}
+}
+
+@keyframes hideOverflow {
+  from {overflow: visible;}
+  to {overflow: hidden;}
+}

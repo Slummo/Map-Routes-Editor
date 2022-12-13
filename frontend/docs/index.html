@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Map Routes Editor</title>
+    <link rel="stylesheet" href="../styles/menu.css">
+    <link rel="stylesheet" href="../styles/map.css">
+    <link rel="stylesheet" href="../styles/info.css">
+  </head>
+  <body>
+    <nav>
+      <input type="checkbox" id="checkbox" style="display: none;">
+      <!-- Per cliccare l'input senza doverlo mostrare-->
+      <label for="checkbox" id="expand">
+        <img src="../assets/options.svg">
+      </label>
+      <ul>
+        <li id="download">
+          <img src="../assets/download.svg">
+          Salva
+        </li>
+        <li id="open">
+          <img src="../assets/open.svg">
+          Apri
+        </li>
+        <li id="add">
+          <img src="../assets/add.svg">
+          Aggiungi
+        </li>
+      </ul>
+    </nav>
+    <img src="../assets/world.svg" id="map">
+    <div id="info">
+      <div id="resizer"></div>
+      <h1>Informazioni</h1>
+      <h2>Luogo</h2>
+      <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Eligendi ex, totam quos quia quis a accusantium consectetur vero amet molestias rem similique debitis ducimus dolore corporis reprehenderit nobis architecto distinctio.</p>
+      <br>
+      <h2>Percorso</h2>
+      <p>Lorem ipsum, dolor sit amet consectetur adipisicing elit. Nostrum, obcaecati autem blanditiis porro vel provident veniam magni corrupti, itaque libero accusamus modi sapiente quasi quo similique, nesciunt impedit. Reiciendis, eligendi.</p>
+      <br>
+      <h2>Tempo</h2>
+      <p>Lorem ipsum, dolor sit amet consectetur adipisicing elit. Accusamus repudiandae, eligendi, nisi dicta animi sapiente a eveniet adipisci nesciunt quasi neque consequuntur iste aut. Cupiditate facilis quod distinctio consequatur a!</p>
+    </div>
+    <script src="../scripts/buttons.js"></script>
+    <script src="../scripts/resize.js"></script>
+  </body>
+</html>
