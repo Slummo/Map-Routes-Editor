@@ -1,0 +1,22 @@
+{
+  "name": "test-addon",
+  "version": "1.0.0",
+  "description": "",
+  "main": "nodeaddon.js",
+  "gypfile": true,
+  "scripts": {
+    "build": "node-gyp rebuild",
+    "clean": "node-gyp clean",
+    "start": "electron ."
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^22.0.0",
+    "electron-rebuild": "^3.2.9",
+    "node-gyp": "^9.3.0"
+  },
+  "dependencies": {
+    "node-addon-api": "^5.0.0"
+  }
+}
