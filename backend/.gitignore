@@ -1,4 +1,6 @@
 */*
 !/src/*
 !/shaders/*
+!/include/*
+!/lib/*
 *.jpg
