@@ -7,11 +7,15 @@ function sleep(ms) {
 }
 
 const createWindow = () => {
-    const win = new BrowserWindow({width: 800, height: 600, autoHideMenuBar: true, webPreferences: {
+    const win = new BrowserWindow({
+        autoHideMenuBar: true,
+        webPreferences: {
         preload: path.join(__dirname, 'backend/preload.js')
-    }, contextIsolation: true})
-
+        }, 
+        contextIsolation: true
+    })
     win.loadFile("frontend/docs/index.html")
+    win.maximize()
 }
 
 app.whenReady().then(() => {createWindow();})
