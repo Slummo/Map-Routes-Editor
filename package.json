@@ -1,12 +1,12 @@
 {
-  "name": "test-addon",
+  "name": "map-viewer",
   "version": "1.0.0",
   "description": "",
   "main": "main.js",
   "gypfile": true,
   "scripts": {
-    "build": "node-gyp rebuild",
-    "clean": "node-gyp clean",
+    "build": "cd backend && node-gyp rebuild",
+    "clean": "cd backend && node-gyp clean",
     "start": "electron ."
   },
   "author": "",
