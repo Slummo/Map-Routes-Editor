@@ -2,7 +2,7 @@
   "name": "test-addon",
   "version": "1.0.0",
   "description": "",
-  "main": "nodeaddon.js",
+  "main": "main.js",
   "gypfile": true,
   "scripts": {
     "build": "node-gyp rebuild",
