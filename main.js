@@ -1,5 +1,4 @@
 //index.js
-const testAddon = require('./backend/build/Release/addon')
 const path = require('path')
 const { ipcMain, BrowserWindow, app, screen } = require('electron');
 
@@ -12,7 +11,7 @@ const createWindow = () => {
         preload: path.join(__dirname, 'backend/preload.js')
     }, contextIsolation: true})
 
-    win.loadFile("frontend/index.html")
+    win.loadFile("frontend/docs/index.html")
 }
 
 app.whenReady().then(() => {createWindow();})
