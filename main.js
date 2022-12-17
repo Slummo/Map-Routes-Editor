@@ -1,5 +1,6 @@
 //index.js
 const path = require('path')
+const addon = require("./backend/build/Release/addon")
 const { ipcMain, BrowserWindow, app, screen } = require('electron');
 
 function sleep(ms) {
@@ -8,7 +9,9 @@ function sleep(ms) {
 
 const createWindow = () => {
     const win = new BrowserWindow({
-        autoHideMenuBar: true,
+        width: 800,
+        height: 600,
+        autoHideMenuBar: false,
         webPreferences: {
         preload: path.join(__dirname, 'backend/preload.js')
         }, 
@@ -20,22 +23,20 @@ const createWindow = () => {
 
 app.whenReady().then(() => {createWindow();})
 
-// var eddu
+var eddu
 
-// testAddon.startEngine(800, 600);
-// eddu = testAddon.loadImage();
+addon.startEngine(100, 100);
 
-// async function ed() {
-//     await sleep(3000);
-//     console.log(testAddon.loadFrame())
-// } 
+async function ed() {
+    await sleep(2000);
+    eddu = addon.loadFrame()
+    eddu = new Uint8Array(eddu)
+} 
 
-// ed()
-
-// ipcMain.on("debug", function(event, data) {console.log(data)})
+ed()
 
 
-// ipcMain.handle("image_request", async (event, arg) => {
-//     return eddu;
-// })
+ipcMain.handle("image_request", async (event, arg) => {
+    return eddu;
+})
 

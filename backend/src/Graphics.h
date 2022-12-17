@@ -12,8 +12,20 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include "Program.h"
+#include <node.h>
+#include <napi.h>
 #include "stb_image.h"
+
+typedef GLuint Shader;
+typedef void *LPVOID;
+typedef uint8_t BOOL;
+typedef BOOL *LPBOOL;
+typedef void (*LPTHREADROUTINE)(void*, LPBOOL);
+typedef struct {
+    uint32_t width;
+    uint32_t height;
+    uint8_t* renderBuffer;
+}   GLThreadArgs;
 
 typedef std::pair<uint32_t, uint32_t> Vec2u;
 typedef unsigned int uint;
@@ -21,6 +33,14 @@ typedef unsigned int uint;
 #define CheckGLError() _CheckGLError(__FILE__, __LINE__)
 
 void _CheckGLError(const char* file, int line);
+
+GLFWwindow* gl_renderWndw(const char* name, Vec2u size);
+
+void frameResizeCallback(GLFWwindow* window, int width, int height);
+
+std::string readFile(const char* filepath);
+
+GLuint loadProgram(const char* vertex_shader, const char* fragment_shader, Shader& vShader, Shader& fShader, bool verbose);
 
 struct Color {
     unsigned int r;
@@ -40,6 +60,24 @@ class VertexArray {
 
 class VertexBuffer {
 
+};
+
+class Program {
+    private: 
+        GLuint m_program;
+        Shader m_vertShader;
+        Shader m_fragShader;
+    
+    public:
+        Program(const char* vertShader, const char* fragShader, bool debug = false) { load(vertShader, fragShader, debug); };
+        Program(Program &p) : m_program(p.m_program) {};
+
+        void load(const char* vertShader, const char* fragShader, bool debug = false) { m_program = loadProgram(vertShader, fragShader, m_vertShader, m_fragShader, debug); }
+        void bind() { glUseProgram(m_program); };
+        void unbind() { glUseProgram(0); };
+        GLuint getUniformLocaiton(const char* uniform_name) { return glGetUniformLocation(m_program, uniform_name); };
+        Shader getVertShader() { return m_vertShader; };
+        Shader getFragShader() { return m_fragShader; };
 };
 
 class Texture {
@@ -93,7 +131,27 @@ class Texture {
         
 };
 
-GLFWwindow* gl_renderWndw(const char* name, Vec2u size);
-void frameResizeCallback(GLFWwindow* window, int width, int height);
+class OpenGLThread : public Napi::AsyncWorker {
+    public:
+        OpenGLThread(Napi::Env env, LPTHREADROUTINE OGLfunction, GLThreadArgs args) : AsyncWorker(env), routine(OGLfunction), args(args) {};
+
+        ~OpenGLThread() {};
+
+        void Stop() {
+            keepExecuting = 0;
+        }
+
+    private: 
+        LPTHREADROUTINE routine;
+        GLThreadArgs args;
+        BOOL keepExecuting = 1;
+
+        void Execute() override {
+            routine((LPVOID)&args, &keepExecuting);
+        };
+
+        void OnOK() override {
+        }
+};
 
 #endif

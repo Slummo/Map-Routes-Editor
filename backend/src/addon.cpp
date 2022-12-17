@@ -3,11 +3,10 @@
 #include <node.h>
 #include <napi.h>
 #include "Graphics.h"
-#include "OGL.h"
 
 typedef void *LPVOID;
 OpenGLThread* GLThread;
-GLuint* renderBuffer;
+uint8_t* renderBuffer;
 GLuint screenWidth, screenHeight;
 
 Napi::ArrayBuffer loadImage(const Napi::CallbackInfo& info) {
@@ -59,8 +58,8 @@ void OpenGLEngine(LPVOID args, LPBOOL keepExecuting) {
       2, 4, 1
   };
 
-  Texture pTexture("eddu.jpg", GL_TEXTURE_2D);
-  pTexture.bind();
+  // Texture pTexture("eddu.jpg", GL_TEXTURE_2D);
+  // pTexture.bind();
 
   GLuint vertexBuffer;
   GLuint VAO;
@@ -81,7 +80,7 @@ void OpenGLEngine(LPVOID args, LPBOOL keepExecuting) {
   glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3*sizeof(float)));
   glEnableVertexAttribArray(1);
 
-  Program pProgram("shaders/vertexShader.glsl", "shaders/fragmentShader.glsl");
+  Program pProgram("backend/shaders/vertexShader.glsl", "backend/shaders/fragmentShader.glsl");
   pProgram.bind();
 
   GLuint FBO;
@@ -104,7 +103,7 @@ void OpenGLEngine(LPVOID args, LPBOOL keepExecuting) {
   glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, renderBuffer);
   
   while (!glfwWindowShouldClose(window) && (*keepExecuting)) {
-    glClearColor(0.3, 0.52, 0.87, 1);
+    glClearColor(0.25, 0.5, 1, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glDrawElements(GL_TRIANGLES, sizeof(indices)/sizeof(GLfloat), GL_UNSIGNED_INT, 0);
@@ -124,7 +123,7 @@ Napi::Value startEngine(const Napi::CallbackInfo& info) {
   
   screenWidth = info[0].As<Napi::Number>().Uint32Value();
   screenHeight = info[1].As<Napi::Number>().Uint32Value();
-  renderBuffer = new GLuint[screenWidth * screenHeight * 3];
+  renderBuffer = new uint8_t[screenWidth * screenHeight * 3];
 
   GLThreadArgs args{screenWidth, screenHeight, renderBuffer};
 
@@ -142,9 +141,9 @@ Napi::Value stopEngine(const Napi::CallbackInfo& info) {
 }
 
 Napi::ArrayBuffer loadFrame(const Napi::CallbackInfo& info) {
-  Napi::ArrayBuffer frameBuffer = Napi::ArrayBuffer::New(info.Env(), screenWidth* screenHeight * 3 * sizeof(GLuint));
+  Napi::ArrayBuffer frameBuffer = Napi::ArrayBuffer::New(info.Env(), screenWidth* screenHeight * 3 * sizeof(uint8_t));
 
-  std::memcpy(frameBuffer.Data(), renderBuffer, screenWidth * screenHeight * 3 * sizeof(GLuint));
+  std::memcpy(frameBuffer.Data(), renderBuffer, screenWidth * screenHeight * 3 * sizeof(uint8_t));
 
   return frameBuffer;
 }
