@@ -25,7 +25,7 @@ app.whenReady().then(() => {createWindow();})
 
 var eddu
 
-addon.startEngine(100, 100);
+addon.startEngine(400, 400);
 
 async function ed() {
     await sleep(2000);
@@ -37,6 +37,6 @@ ed()
 
 
 ipcMain.handle("image_request", async (event, arg) => {
-    return eddu;
+    return new Uint8Array(addon.loadFrame());
 })
 

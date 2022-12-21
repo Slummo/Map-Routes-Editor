@@ -8,17 +8,18 @@ function sleep (time) {
 
 async function idk() {
     await sleep(3000)
-    const data = await window.electronAPI.requestFrame()
-    console.log(data[2])
-    for(let i=0; i < 100; i++) {
-        for(let j=0; j < 100; j++) {
-            r = data[i * 100 + j + 0]
-            g = data[i * 100 + j + 1]
-            b = data[i * 100 + j + 2]
-            ctx.fillStyle = "rgba("+r+","+g+","+b+", 1)"
-            ctx.fillRect((i/3)%100, Math.floor((i/3)/100), 1, 1)
-        } 
+    while (true) {
+        console.log("a")
+        var data = await window.electronAPI.requestFrame()
+        data = new Uint8ClampedArray(data)
+        var imgData = new ImageData(data, 400, 400)
+        ctx.putImageData(imgData, 0, 0)
     }
+    // base_image = new Image();
+    // base_image.src = 'ics.PNG';
+    // base_image.onload = function(){
+    // ctx.drawImage(base_image, 0, 0);
+  
 }
 
 idk()

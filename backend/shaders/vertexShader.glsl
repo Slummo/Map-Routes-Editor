@@ -13,5 +13,5 @@ void main() {
     FPos = aPos;
     TexCoord = aTexCoord;
 
-    gl_Position = vec4(aPos, 1.0f);
+    gl_Position = transform * vec4(aPos, 1.0f);
 }

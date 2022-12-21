@@ -14,7 +14,7 @@ img#map {
 canvas#canvas {
   z-index: 1;
   position: absolute;
-  width: 65vw;
+  transform: scaleY(-1);
   top: 0;
   bottom: 0;
   right: 10vw;

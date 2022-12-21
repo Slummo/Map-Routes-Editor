@@ -4,6 +4,8 @@
 #include <napi.h>
 #include "Graphics.h"
 
+#define BYTES_PER_PIXEL 4
+
 typedef void *LPVOID;
 OpenGLThread* GLThread;
 uint8_t* renderBuffer;
@@ -58,8 +60,8 @@ void OpenGLEngine(LPVOID args, LPBOOL keepExecuting) {
       2, 4, 1
   };
 
-  // Texture pTexture("eddu.jpg", GL_TEXTURE_2D);
-  // pTexture.bind();
+  Texture pTexture("frontend/docs/2ddu.jpg", GL_TEXTURE_2D);
+  pTexture.bind();
 
   GLuint vertexBuffer;
   GLuint VAO;
@@ -80,9 +82,6 @@ void OpenGLEngine(LPVOID args, LPBOOL keepExecuting) {
   glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3*sizeof(float)));
   glEnableVertexAttribArray(1);
 
-  Program pProgram("backend/shaders/vertexShader.glsl", "backend/shaders/fragmentShader.glsl");
-  pProgram.bind();
-
   GLuint FBO;
   glGenFramebuffers(1, &FBO);
 
@@ -93,21 +92,41 @@ void OpenGLEngine(LPVOID args, LPBOOL keepExecuting) {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-  GLuint renderBuffer;
-  glGenRenderbuffers(1, &renderBuffer);
-  glBindRenderbuffer(GL_RENDERBUFFER, renderBuffer);
+  GLuint RBO;
+  glGenRenderbuffers(1, &RBO);
+  glBindRenderbuffer(GL_RENDERBUFFER, RBO);
   glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, dimentions.first, dimentions.second);
 
   glBindFramebuffer(GL_FRAMEBUFFER, FBO);
   glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureAttachment, 0);
-  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, renderBuffer);
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
+
+  Program pProgram("backend/shaders/vertexShader.glsl", "backend/shaders/fragmentShader.glsl");
+  pProgram.bind();
+  pTexture.bind();
+
+  glm::mat4 rot(1.0f);
+  rot = glm::rotate(rot, glm::radians(90.f), glm::vec3(0.0f, 0.0f, 1.0f));
+  GLuint gMat = pProgram.getUniformLocaiton("transform");
+  float deg = 1;
   
   while (!glfwWindowShouldClose(window) && (*keepExecuting)) {
+    rot = glm::rotate(rot, glm::radians(deg), glm::vec3(0.0f, 1.0f, 0.0f));
+
+    glUniformMatrix4fv(gMat, 1, GL_FALSE, glm::value_ptr(rot));
+
+    glBindFramebuffer(GL_FRAMEBUFFER, FBO);
     glClearColor(0.25, 0.5, 1, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glDrawElements(GL_TRIANGLES, sizeof(indices)/sizeof(GLfloat), GL_UNSIGNED_INT, 0);
-    glReadPixels(0, 0, dimentions.first, dimentions.second, GL_RGB, GL_UNSIGNED_BYTE, fArgs->renderBuffer);
+    glReadPixels(0, 0, dimentions.first, dimentions.second, BYTES_PER_PIXEL == 3 ? GL_RGB : GL_RGBA, GL_UNSIGNED_BYTE, fArgs->buffer);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glClearColor(0.25, 0.5, 1, 1);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glDrawElements(GL_TRIANGLES, sizeof(indices)/sizeof(GLfloat), GL_UNSIGNED_INT, 0);
 
     glfwSwapBuffers(window);
     glfwPollEvents();
@@ -123,7 +142,7 @@ Napi::Value startEngine(const Napi::CallbackInfo& info) {
   
   screenWidth = info[0].As<Napi::Number>().Uint32Value();
   screenHeight = info[1].As<Napi::Number>().Uint32Value();
-  renderBuffer = new uint8_t[screenWidth * screenHeight * 3];
+  renderBuffer = new uint8_t[screenWidth * screenHeight * BYTES_PER_PIXEL];
 
   GLThreadArgs args{screenWidth, screenHeight, renderBuffer};
 
@@ -141,9 +160,9 @@ Napi::Value stopEngine(const Napi::CallbackInfo& info) {
 }
 
 Napi::ArrayBuffer loadFrame(const Napi::CallbackInfo& info) {
-  Napi::ArrayBuffer frameBuffer = Napi::ArrayBuffer::New(info.Env(), screenWidth* screenHeight * 3 * sizeof(uint8_t));
+  Napi::ArrayBuffer frameBuffer = Napi::ArrayBuffer::New(info.Env(), screenWidth* screenHeight * BYTES_PER_PIXEL * sizeof(uint8_t));
 
-  std::memcpy(frameBuffer.Data(), renderBuffer, screenWidth * screenHeight * 3 * sizeof(uint8_t));
+  std::memcpy(frameBuffer.Data(), renderBuffer, screenWidth * screenHeight * BYTES_PER_PIXEL * sizeof(uint8_t));
 
   return frameBuffer;
 }

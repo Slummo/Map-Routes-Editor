@@ -20,11 +20,11 @@ typedef GLuint Shader;
 typedef void *LPVOID;
 typedef uint8_t BOOL;
 typedef BOOL *LPBOOL;
-typedef void (*LPTHREADROUTINE)(void*, LPBOOL);
+typedef void (*LPTHREADROUTINE)(LPVOID, LPBOOL);
 typedef struct {
     uint32_t width;
     uint32_t height;
-    uint8_t* renderBuffer;
+    uint8_t* buffer;
 }   GLThreadArgs;
 
 typedef std::pair<uint32_t, uint32_t> Vec2u;
