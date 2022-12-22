@@ -2,37 +2,34 @@ const img = document.getElementById("map")
 const canvas = document.getElementById("canvas")
 const ctx = canvas.getContext("2d")
 
-var viewport_width = window.innerWidth;
-var viewport_height = window.innerHeight;
-
 function sleep (time) {
     return new Promise((resolve) => setTimeout(resolve, time));
 }
 
-var screenWidth
-var screenHeight
+var screenWidth = window.outerWidth
+var screenHeight = window.outerHeight
 
 window.onresize = () => {
-    screenWidth = window.innerWidth
-    screenHeight = window.innerHeight
+    screenWidth = window.outerWidth
+    screenHeight = window.outerHeight
 
-    var arg = {
-        width: screenWidth,
-        height: screenHeight
-    }
-
-    ctx.canvas.width = screenWidth;
-    ctx.canvas.height = screenHeight;
-    window.electronAPI.resizeFrame(arg)
+    ctx.canvas.width = 800;
+    ctx.canvas.height = 600;
+    //window.electronAPI.resizeFrame(screenWidth, screenHeight)
 }
 
 const ratio = async () => {
-    await sleep(3000)
+    await sleep(1000)
+
+    window.electronAPI.startEngine(screenWidth, screenHeight)
 
     while (true) {
         var data = await window.electronAPI.requestFrame()
         data = new Uint8ClampedArray(data)
-        var imgData = new ImageData(data, screenWidth, screenHeight)
+        if (data.length != screenWidth * screenHeight * 4) {
+            ;
+        }
+        var imgData = new ImageData(data, 800, 600)
         ctx.putImageData(imgData, 0, 0)
     }
 }

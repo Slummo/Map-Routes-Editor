@@ -22,24 +22,16 @@ const createWindow = () => {
 }
 
 app.whenReady().then(() => {createWindow();})
+addon.startEngine(800, 600)
 
-var eddu
+ipcMain.handleOnce("start_engine_request", async (event, arg) => {
+    //addon.startEngine(arg[0], arg[1])
+})
 
-addon.startEngine(800, 600);
-
-async function ed() {
-    await sleep(2000);
-    eddu = addon.loadFrame()
-    eddu = new Uint8Array(eddu)
-} 
-
-ed()
-
-
-ipcMain.handle("image_request", async (event, arg) => {
+ipcMain.handle("frame_request", async (event, arg) => {
     return new Uint8Array(addon.loadFrame());
 })
 
 ipcMain.handle("resize_request", async(event, arg) => {
-    addon.resizeFrame(arg.width, arg.height);
+    addon.resizeFrame(arg[0], arg[1]);
 })

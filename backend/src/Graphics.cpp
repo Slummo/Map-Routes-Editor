@@ -123,6 +123,7 @@ GLFWwindow* gl_renderWndw(const char* name, Vec2u size) {
 
 void frameResizeCallback(GLFWwindow* window, int width, int height) {
     const float aspectRatio = (float)(width / height);
+    std::cout << aspectRatio;
     float xSpan = 1;
     float ySpan = 1;
 

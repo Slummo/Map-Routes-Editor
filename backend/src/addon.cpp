@@ -145,11 +145,11 @@ Napi::ArrayBuffer loadFrame(const Napi::CallbackInfo& info) {
 }
 
 Napi::Value resizeFramebuffer(const Napi::CallbackInfo& info) {
-  if (info.Length() < 2 && (!info[0].IsNumber() | !info[1].IsNumber())) {
+  if (info.Length() < 2) {
     return info.Env().Undefined();
   }
 
-  //frameResizeCallback(renderWindow, info[0].As<Napi::Number>().Uint32Value(), info[1].As<Napi::Number>().Uint32Value());
+  frameResizeCallback(renderWindow, info[0].As<Napi::Number>().Uint32Value(), info[1].As<Napi::Number>().Uint32Value());
 
   return info.Env().Undefined();
 }
