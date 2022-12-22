@@ -22,10 +22,9 @@ const createWindow = () => {
 }
 
 app.whenReady().then(() => {createWindow();})
-addon.startEngine(800, 600)
 
 ipcMain.handleOnce("start_engine_request", async (event, arg) => {
-    //addon.startEngine(arg[0], arg[1])
+    addon.startEngine(arg[0], arg[1])
 })
 
 ipcMain.handle("frame_request", async (event, arg) => {

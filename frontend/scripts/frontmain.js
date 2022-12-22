@@ -20,6 +20,8 @@ window.onresize = () => {
 
 const ratio = async () => {
     await sleep(1000)
+    ctx.canvas.width = screenWidth;
+    ctx.canvas.height = screenHeight;
 
     window.electronAPI.startEngine(screenWidth, screenHeight)
 
@@ -29,7 +31,7 @@ const ratio = async () => {
         if (data.length != screenWidth * screenHeight * 4) {
             ;
         }
-        var imgData = new ImageData(data, 800, 600)
+        var imgData = new ImageData(data, screenWidth, screenHeight)
         ctx.putImageData(imgData, 0, 0)
     }
 }
