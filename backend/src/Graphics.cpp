@@ -98,6 +98,10 @@ GLuint loadProgram(const char* vertex_shader, const char* fragment_shader, Shade
 }
 
 GLFWwindow* gl_renderWndw(const char* name, Vec2u size) {
+    glfwInit();
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     GLFWwindow* window = glfwCreateWindow(size.first, size.second, name, NULL, NULL);
 
@@ -113,12 +117,24 @@ GLFWwindow* gl_renderWndw(const char* name, Vec2u size) {
     }
 
     glViewport(0, 0, size.first, size.second);
-    glfwSetFramebufferSizeCallback(window, frameResizeCallback);
 
     return window;
 }
 
 void frameResizeCallback(GLFWwindow* window, int width, int height) {
+    const float aspectRatio = (float)(width / height);
+    float xSpan = 1;
+    float ySpan = 1;
+
+    if (aspectRatio > 1) {
+        xSpan *= aspectRatio;
+    }  
+    else {
+        ySpan /= aspectRatio;
+    }
+
+    glOrtho(-1 * xSpan, xSpan, -1*ySpan, ySpan, -1, 1);
+    
     glViewport(0, 0, width, height);
 }
 

@@ -8,40 +8,17 @@
 
 typedef void *LPVOID;
 OpenGLThread* GLThread;
-uint8_t* renderBuffer;
 GLuint screenWidth, screenHeight;
-
-Napi::ArrayBuffer loadImage(const Napi::CallbackInfo& info) {
-  std::ifstream image("eddu.jpg", std::ios::binary);
-  Napi::ArrayBuffer imageBuffer;
-  int bufferSize;
-
-  image.seekg(0, image.end);
-  bufferSize = image.tellg();
-  image.seekg(0, image.beg);
-
-  char *data = new char[bufferSize];
-
-  image.read(data, bufferSize);
-
-  imageBuffer = Napi::ArrayBuffer::New(info.Env(), bufferSize);
-
-  memcpy(imageBuffer.Data(), data, bufferSize);
-
-  image.close();
-  return imageBuffer;
-}
+GLFWwindow* renderWindow;
+uint8_t* renderBuffer;
 
 void OpenGLEngine(LPVOID args, LPBOOL keepExecuting) {
-  glfwInit();
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   GLThreadArgs* fArgs = (GLThreadArgs*)args;
 
   Vec2u dimentions(fArgs->width, fArgs->height);
 
-  GLFWwindow* window = gl_renderWndw("eddu", dimentions);
+  *(fArgs->window) = gl_renderWndw("master", dimentions);
+
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_TEXTURE_2D);
 
@@ -108,10 +85,10 @@ void OpenGLEngine(LPVOID args, LPBOOL keepExecuting) {
   glm::mat4 rot(1.0f);
   rot = glm::rotate(rot, glm::radians(90.f), glm::vec3(0.0f, 0.0f, 1.0f));
   GLuint gMat = pProgram.getUniformLocaiton("transform");
-  float deg = 1;
+  float deg = 0.5;
   
-  while (!glfwWindowShouldClose(window) && (*keepExecuting)) {
-    rot = glm::rotate(rot, glm::radians(deg), glm::vec3(0.0f, 1.0f, 0.0f));
+  while (!glfwWindowShouldClose(*(fArgs->window)) && (*keepExecuting)) {
+    rot = glm::rotate(rot, glm::radians(deg), glm::vec3(1.0f, 1.0f, 0.0f));
 
     glUniformMatrix4fv(gMat, 1, GL_FALSE, glm::value_ptr(rot));
 
@@ -128,7 +105,7 @@ void OpenGLEngine(LPVOID args, LPBOOL keepExecuting) {
 
     glDrawElements(GL_TRIANGLES, sizeof(indices)/sizeof(GLfloat), GL_UNSIGNED_INT, 0);
 
-    glfwSwapBuffers(window);
+    glfwSwapBuffers(*(fArgs->window));
     glfwPollEvents();
   }
 
@@ -136,15 +113,15 @@ void OpenGLEngine(LPVOID args, LPBOOL keepExecuting) {
 }
 
 Napi::Value startEngine(const Napi::CallbackInfo& info) {
-  if (info.Length() < 2) {
+  if (info.Length() < 2 && (!info[0].IsNumber() | !info[1].IsNumber())) {
     return info.Env().Undefined();
   }
   
   screenWidth = info[0].As<Napi::Number>().Uint32Value();
   screenHeight = info[1].As<Napi::Number>().Uint32Value();
   renderBuffer = new uint8_t[screenWidth * screenHeight * BYTES_PER_PIXEL];
-
-  GLThreadArgs args{screenWidth, screenHeight, renderBuffer};
+  
+  GLThreadArgs args{screenWidth, screenHeight, &renderWindow, renderBuffer};
 
   GLThread = new OpenGLThread(info.Env(), OpenGLEngine, args);
 
@@ -167,11 +144,21 @@ Napi::ArrayBuffer loadFrame(const Napi::CallbackInfo& info) {
   return frameBuffer;
 }
 
+Napi::Value resizeFramebuffer(const Napi::CallbackInfo& info) {
+  if (info.Length() < 2 && (!info[0].IsNumber() | !info[1].IsNumber())) {
+    return info.Env().Undefined();
+  }
+
+  //frameResizeCallback(renderWindow, info[0].As<Napi::Number>().Uint32Value(), info[1].As<Napi::Number>().Uint32Value());
+
+  return info.Env().Undefined();
+}
+
 Napi::Object InitAll(Napi::Env env, Napi::Object exports) {
-  exports.Set("loadImage", Napi::Function::New(env, loadImage));
   exports.Set("startEngine", Napi::Function::New(env, startEngine));
   exports.Set("stopEngine", Napi::Function::New(env, stopEngine));
   exports.Set("loadFrame", Napi::Function::New(env, loadFrame));
+  exports.Set("resizeFrame", Napi::Function::New(env, resizeFramebuffer));
 
   return exports;
 }

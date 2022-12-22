@@ -18,14 +18,14 @@ const createWindow = () => {
         contextIsolation: true
     })
     win.loadFile("frontend/docs/index.html")
-    win.maximize()
+    //win.maximize()
 }
 
 app.whenReady().then(() => {createWindow();})
 
 var eddu
 
-addon.startEngine(400, 400);
+addon.startEngine(800, 600);
 
 async function ed() {
     await sleep(2000);
@@ -40,3 +40,6 @@ ipcMain.handle("image_request", async (event, arg) => {
     return new Uint8Array(addon.loadFrame());
 })
 
+ipcMain.handle("resize_request", async(event, arg) => {
+    addon.resizeFrame(arg.width, arg.height);
+})

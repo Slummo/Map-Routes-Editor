@@ -10,7 +10,7 @@
             "<!@(node -p \"require('node-addon-api').include\")",
             "include",
         ],
-        'libraries': [ "C:/Users/Ilias/AppData/Local/node-gyp/Cache/18.12.1/x64/node.lib",
+        'libraries': [ "../lib/node.lib",
             "../lib/OpenGL32.Lib",
             "../lib/glfw3_mt.lib",
             "../lib/Gdi32.Lib"

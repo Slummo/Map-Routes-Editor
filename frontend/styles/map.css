@@ -1,25 +1,7 @@
-img#map {
-  z-index: 1;
-  position: absolute;
-  width: 65vw;
-  top: 0;
-  bottom: 0;
-  right: 10vw;
-  left: 0;
-  margin: auto;
-  aspect-ratio: 2/1;
-  border: 5px dotted black;
-}
-
 canvas#canvas {
   z-index: 1;
-  position: absolute;
   transform: scaleY(-1);
+  position: absolute;
   top: 0;
-  bottom: 0;
-  right: 10vw;
   left: 0;
-  margin: auto;
-  aspect-ratio: 2/1;
-  border: 5px dotted black;
 }
