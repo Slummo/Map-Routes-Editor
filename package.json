@@ -5,6 +5,8 @@
   "main": "main.js",
   "gypfile": true,
   "scripts": {
+    "build:dev": "cd backend && node-gyp configure && node-gyp -j 16 build --debug",
+    "rebuild": "cd backend && node-gyp rebuild && cd .. && electron .",
     "build": "cd backend && node-gyp rebuild",
     "clean": "cd backend && node-gyp clean",
     "start": "electron ."
@@ -17,6 +19,7 @@
     "node-gyp": "^9.3.0"
   },
   "dependencies": {
-    "node-addon-api": "^5.0.0"
+    "node-addon-api": "^5.0.0",
+    "ws": "^8.11.0"
   }
 }

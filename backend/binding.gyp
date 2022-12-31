@@ -4,7 +4,7 @@
         "cflags!": [ "-fno-exceptions" ],
         "cflags_cc!": [ "-fno-exceptions" ],
         "sources": [
-            "src/addon.cpp", "src/glad.c", "src/Graphics.cpp",
+            "src/addon.cpp", "src/glad.c", "src/Graphics.cpp", "src/Framebuffer.cpp", "src/Event.cpp", "src/Program.cpp", "src/Texture.cpp", "src/Camera.cpp"
         ],
         'include_dirs': [
             "<!@(node -p \"require('node-addon-api').include\")",

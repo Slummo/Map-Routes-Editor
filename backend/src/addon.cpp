@@ -1,26 +1,38 @@
+
 #include <iostream>
 #include <fstream>
 #include <node.h>
 #include <napi.h>
-#include "Graphics.h"
+#include <condition_variable>
+#include <chrono>
+#include "Graphics.hpp"
 
 #define BYTES_PER_PIXEL 4
 
-typedef void *LPVOID;
+size_t screenWidth, screenHeight;
+
 OpenGLThread* GLThread;
-GLuint screenWidth, screenHeight;
-GLFWwindow* renderWindow;
-uint8_t* renderBuffer;
+GLEventQueue queue;
+
+uint8_t* buffer;
+
+std::mutex mutex;
+std::condition_variable cond;
+bool eventHandled = false;
 
 void OpenGLEngine(LPVOID args, LPBOOL keepExecuting) {
   GLThreadArgs* fArgs = (GLThreadArgs*)args;
 
-  Vec2u dimentions(fArgs->width, fArgs->height);
+  Vec2u dimentions(1, 1);
 
-  *(fArgs->window) = gl_renderWndw("master", dimentions);
+  GLFWwindow* window = gl_renderWndw("master", dimentions);
+  glfwHideWindow(window);
+  glViewport(0, 0, (fArgs->width), (fArgs->height));
+  glfwSwapInterval(1);
 
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_TEXTURE_2D);
+  Framebuffer FBO(dimentions);
 
   GLfloat vertices[] = {
       0.5f, 0.5f, 0.0f, 1.0f, 1.0f,
@@ -40,73 +52,78 @@ void OpenGLEngine(LPVOID args, LPBOOL keepExecuting) {
   Texture pTexture("frontend/docs/2ddu.jpg", GL_TEXTURE_2D);
   pTexture.bind();
 
-  GLuint vertexBuffer;
-  GLuint VAO;
-  GLuint elementBuffer;
-  glGenVertexArrays(1, &VAO);
-  glBindVertexArray(VAO);
+  VertexArray VAO;
+  VAO.bind();
 
-  glGenBuffers(1, &vertexBuffer);
-  glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer); 
-  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+  GLuint elementBuffer;
+
+  VertexBuffer VBO((uint8_t*)vertices, sizeof(vertices));
 
   glGenBuffers(1, &elementBuffer);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), NULL);
-  glEnableVertexAttribArray(0);
-  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3*sizeof(float)));
-  glEnableVertexAttribArray(1);
+  VBO.setAttribPointer(0, 3, GL_FLOAT, 5 * sizeof(float), NULL);
+  VBO.setAttribPointer(1, 2, GL_FLOAT, 5 * sizeof(float), 3 * sizeof(float));
 
-  GLuint FBO;
-  glGenFramebuffers(1, &FBO);
-
-  GLuint textureAttachment;
-  glGenTextures(1, &textureAttachment);
-  glBindTexture(GL_TEXTURE_2D, textureAttachment);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, dimentions.first, dimentions.second, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-  GLuint RBO;
-  glGenRenderbuffers(1, &RBO);
-  glBindRenderbuffer(GL_RENDERBUFFER, RBO);
-  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, dimentions.first, dimentions.second);
-
-  glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureAttachment, 0);
-  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
+  VBO.bind();
 
   Program pProgram("backend/shaders/vertexShader.glsl", "backend/shaders/fragmentShader.glsl");
   pProgram.bind();
   pTexture.bind();
 
+  Camera cam(fArgs->width, fArgs->height, 1, 100, glm::vec3(0, 0, 2), glm::vec3(0, 0, -1));
+
   glm::mat4 rot(1.0f);
-  rot = glm::rotate(rot, glm::radians(90.f), glm::vec3(0.0f, 0.0f, 1.0f));
+  rot = glm::rotate(rot, glm::radians(90.f), glm::vec3(0.0f, 1.0f, 0.0f));
   GLuint gMat = pProgram.getUniformLocaiton("transform");
-  float deg = 0.5;
+  GLuint cMat = pProgram.getUniformLocaiton("camMatrix");
+  float deg = 1;
   
-  while (!glfwWindowShouldClose(*(fArgs->window)) && (*keepExecuting)) {
-    rot = glm::rotate(rot, glm::radians(deg), glm::vec3(1.0f, 1.0f, 0.0f));
+  while ((*keepExecuting)) {
+    while (queue.size() > 0) {
+      switch (queue.pop())
+      {
+        case GLEvent::REQUEST_FRAME: {
+          cam.updateMatrices();
+          glm::mat4 vProj = cam.getViewProjection();
+          
+          rot = glm::rotate(rot, glm::radians(deg), glm::vec3(0.0f, 1.0f, 0.0f));
 
-    glUniformMatrix4fv(gMat, 1, GL_FALSE, glm::value_ptr(rot));
+          glUniformMatrix4fv(gMat, 1, GL_FALSE, glm::value_ptr(rot));
+          glUniformMatrix4fv(cMat, 1, GL_FALSE, glm::value_ptr(vProj));
+          
+          FBO.bind();
 
-    glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-    glClearColor(0.25, 0.5, 1, 1);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+          glClearColor((GLfloat) 128/255, (GLfloat) 58/255, (GLfloat) 153/255, 1);
+          glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+          
+          glDrawElements(GL_TRIANGLES, sizeof(indices)/sizeof(GLfloat), GL_UNSIGNED_INT, 0);
+          FBO.readData(buffer, BYTES_PER_PIXEL);
+        
+          {
+            std::lock_guard lock(mutex);
+            eventHandled = true;
+            cond.notify_one();
+          }
+          
+          FBO.unbind();
+          glClearColor((GLfloat) 60/255, (GLfloat) 24/255, (GLfloat) 72/255, 1);
+          glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glDrawElements(GL_TRIANGLES, sizeof(indices)/sizeof(GLfloat), GL_UNSIGNED_INT, 0);
-    glReadPixels(0, 0, dimentions.first, dimentions.second, BYTES_PER_PIXEL == 3 ? GL_RGB : GL_RGBA, GL_UNSIGNED_BYTE, fArgs->buffer);
+          glDrawElements(GL_TRIANGLES, sizeof(indices)/sizeof(GLfloat), GL_UNSIGNED_INT, 0);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glClearColor(0.25, 0.5, 1, 1);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+          glfwSwapBuffers(window);
+          glfwPollEvents();
 
-    glDrawElements(GL_TRIANGLES, sizeof(indices)/sizeof(GLfloat), GL_UNSIGNED_INT, 0);
-
-    glfwSwapBuffers(*(fArgs->window));
-    glfwPollEvents();
+          break;
+        }
+        case GLEvent::RESIZE_FRAME:
+          cam.setSize(fArgs->width, fArgs->height);
+          FBO.changeDimentions(fArgs->width, fArgs->height);
+          break;
+      }
+    }
   }
 
   glfwTerminate();
@@ -117,12 +134,11 @@ Napi::Value startEngine(const Napi::CallbackInfo& info) {
     return info.Env().Undefined();
   }
   
-  screenWidth = info[0].As<Napi::Number>().Uint32Value();
-  screenHeight = info[1].As<Napi::Number>().Uint32Value();
-  renderBuffer = new uint8_t[screenWidth * screenHeight * BYTES_PER_PIXEL];
-  
-  GLThreadArgs args{screenWidth, screenHeight, &renderWindow, renderBuffer};
+  screenWidth = (size_t) info[0].As<Napi::Number>().Uint32Value();
+  screenHeight = (size_t) info[1].As<Napi::Number>().Uint32Value();
 
+  GLThreadArgs args{screenWidth, screenHeight, queue};
+  
   GLThread = new OpenGLThread(info.Env(), OpenGLEngine, args);
 
   GLThread->Queue();
@@ -137,19 +153,29 @@ Napi::Value stopEngine(const Napi::CallbackInfo& info) {
 }
 
 Napi::ArrayBuffer loadFrame(const Napi::CallbackInfo& info) {
-  Napi::ArrayBuffer frameBuffer = Napi::ArrayBuffer::New(info.Env(), screenWidth* screenHeight * BYTES_PER_PIXEL * sizeof(uint8_t));
+  Napi::ArrayBuffer frameBuffer = Napi::ArrayBuffer::New(info.Env(), screenWidth * screenHeight * BYTES_PER_PIXEL * sizeof(uint8_t));
 
-  std::memcpy(frameBuffer.Data(), renderBuffer, screenWidth * screenHeight * BYTES_PER_PIXEL * sizeof(uint8_t));
+  buffer = (uint8_t*)frameBuffer.Data();
+
+  queue.push(GLEvent::REQUEST_FRAME);
+  
+  {
+  std::unique_lock lock(mutex);
+  cond.wait(lock, []{ return eventHandled; });
+  eventHandled = false;
+  }
 
   return frameBuffer;
 }
 
 Napi::Value resizeFramebuffer(const Napi::CallbackInfo& info) {
-  if (info.Length() < 2) {
+  if (info.Length() < 2 || !info[0].IsNumber() || !info[1].IsNumber()) {
     return info.Env().Undefined();
   }
 
-  frameResizeCallback(renderWindow, info[0].As<Napi::Number>().Uint32Value(), info[1].As<Napi::Number>().Uint32Value());
+  screenWidth = (size_t) info[0].As<Napi::Number>().Uint32Value();
+  screenHeight = (size_t) info[1].As<Napi::Number>().Uint32Value();
+  queue.push(GLEvent::RESIZE_FRAME);
 
   return info.Env().Undefined();
 }
