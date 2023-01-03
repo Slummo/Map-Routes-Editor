@@ -35,7 +35,6 @@ typedef struct {
 } GLThreadArgs;
 
 typedef std::pair<uint32_t, uint32_t> Vec2u;
-typedef unsigned int uint;
 
 #define CheckGLError() _CheckGLError(__FILE__, __LINE__)
 
@@ -43,17 +42,23 @@ void _CheckGLError(const char* file, int line);
 
 GLFWwindow* gl_renderWndw(const char* name, Vec2u size);
 
-struct Color {
-    unsigned int r;
-    unsigned int g;
-    unsigned int b;
-    unsigned int a;
+class Color {
+    public:
+        uint8_t r;
+        uint8_t g;
+        uint8_t b;
+        uint8_t a;
 
-    Color(uint r, uint b, uint g, uint a) : r(r), g(g), b(b), a(a) {};
-    Color(const Color& other) : r(other.r), g(other.g), b(other.b), a(other.a) {};  
+        Color(uint8_t r, uint8_t b, uint8_t g, uint8_t a) : r(r), g(g), b(b), a(a) {};
+        Color(const Color& other) : r(other.r), g(other.g), b(other.b), a(other.a) {}; 
 
-    Color() : r(0), g(0), b(0), a(0) {};
+        Color() : r(0), g(0), b(0), a(0) {};
 };
+
+const Color WHITE = Color(1, 1, 1, 1);
+const Color BLACK = Color(0, 0, 0, 1);
+
+void clearColor(Color color);
 
 class OpenGLThread : public Napi::AsyncWorker {
     public:

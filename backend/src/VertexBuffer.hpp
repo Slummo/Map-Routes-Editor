@@ -20,13 +20,9 @@ class VertexBuffer {
             unbind();
         }
 
-        inline void setAttribPointer(GLuint index, GLuint size, GLenum type, GLuint64 stride, GLintptr offset, GLboolean normalized = false) {
-            bind();
-
+        inline void setAttribPointer(GLuint index, GLuint size, GLenum type, GLint stride, GLintptr offset, GLboolean normalized = false) {
             glVertexAttribPointer(index, size, type, normalized, stride, (void*)offset);
             glEnableVertexAttribArray(index);
-
-            unbind();
         }
 
         inline void bind() { glBindBuffer(GL_ARRAY_BUFFER, m_id); }

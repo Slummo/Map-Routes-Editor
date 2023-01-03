@@ -47,3 +47,7 @@ void _CheckGLError(const char* file, int line)
     }
     return;
 }
+
+void clearColor(Color color) {
+    glClearColor((GLfloat) color.r/255, (GLfloat) color.g/255, (GLfloat) color.b/255, (GLfloat) color.a/255);
+}

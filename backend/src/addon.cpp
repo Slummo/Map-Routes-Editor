@@ -1,13 +1,16 @@
 
 #include <iostream>
 #include <fstream>
-#include <node.h>
 #include <napi.h>
 #include <condition_variable>
 #include <chrono>
+#include <numbers>
 #include "Graphics.hpp"
 
 #define BYTES_PER_PIXEL 4
+#define SAMPLES 8
+const double PI = 3.141592653589793238463;
+
 
 size_t screenWidth, screenHeight;
 
@@ -23,95 +26,182 @@ bool eventHandled = false;
 void OpenGLEngine(LPVOID args, LPBOOL keepExecuting) {
   GLThreadArgs* fArgs = (GLThreadArgs*)args;
 
-  Vec2u dimentions(1, 1);
-
+  Vec2u dimentions((fArgs->width), (fArgs->height));
+  
   GLFWwindow* window = gl_renderWndw("master", dimentions);
-  glfwHideWindow(window);
+  //glfwHideWindow(window);
   glViewport(0, 0, (fArgs->width), (fArgs->height));
-  glfwSwapInterval(1);
+  
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glEnable(GL_TEXTURE_2D); 
+  glEnable(GL_LINE_SMOOTH);
+  glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
 
-  glEnable(GL_DEPTH_TEST);
-  glEnable(GL_TEXTURE_2D);
-  Framebuffer FBO(dimentions);
+  Framebuffer FBO((fArgs->width), (fArgs->height));
 
-  GLfloat vertices[] = {
-      0.5f, 0.5f, 0.0f, 1.0f, 1.0f,
-      0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
-      -0.5f, -0.5f, 0.0f, 0.0f, 0.0f,
-      -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
-      0.0f, 0.0f, 0.0f, 0.5f, 0.5f
+  std::vector<GLfloat> quadVertices{
+    -1.f,  0.f, -1.f, 
+    -1.f,  0.f,  1.f, 
+    1.f, 0.f,  1.f, 
+
+    1.f,  0.f, -1.f, 
+    1.f,  0.f,  1.f, 
+    -1.f,  0.f, -1.f, 
   };
 
-  GLuint indices[] = {
-      0, 1, 4,
-      0, 3, 4,
-      3, 4, 2,
-      2, 4, 1
-  };
+  Program quadProgram("backend/shaders/quadVert.glsl", "backend/shaders/quadFrag.glsl");
 
-  Texture pTexture("frontend/docs/2ddu.jpg", GL_TEXTURE_2D);
-  pTexture.bind();
+  VertexArray quadVAO;
+  quadVAO.bind();
 
-  VertexArray VAO;
-  VAO.bind();
+  VertexBuffer quadVBO((uint8_t*) quadVertices.data(), quadVertices.size() * sizeof(GLfloat));
+  quadVBO.bind();
 
-  GLuint elementBuffer;
+  quadVBO.setAttribPointer(0, 3, GL_FLOAT, 3 * sizeof(GLfloat), NULL);
 
-  VertexBuffer VBO((uint8_t*)vertices, sizeof(vertices));
+  quadVAO.unbind();
+  quadVBO.unbind();
 
-  glGenBuffers(1, &elementBuffer);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+  // Setting up the grid
 
-  VBO.setAttribPointer(0, 3, GL_FLOAT, 5 * sizeof(float), NULL);
-  VBO.setAttribPointer(1, 2, GL_FLOAT, 5 * sizeof(float), 3 * sizeof(float));
+  glLineWidth(2.f);
 
-  VBO.bind();
+  const int slices = 1000;
+  const float gridSize = 1000;
 
-  Program pProgram("backend/shaders/vertexShader.glsl", "backend/shaders/fragmentShader.glsl");
-  pProgram.bind();
-  pTexture.bind();
+  std::vector<glm::vec3> vertices;
+  std::vector<glm::uvec2> indices;
+  
+  for (int i = -(slices/2); i < (slices/2 + 1); i++) {
+    for (int j = -(slices/2); j < (slices/2 + 1); j++) {
+      vertices.push_back(glm::vec3(((float) gridSize / slices) * j, 0, ((float) gridSize / slices) * i));
+    }
+  }
 
-  Camera cam(fArgs->width, fArgs->height, 1, 100, glm::vec3(0, 0, 2), glm::vec3(0, 0, -1));
+  for (int i = 0; i < slices + 1; i++) {
+    indices.push_back(glm::uvec2((slices + 1) * i, (slices+1) * i + slices));
+    indices.push_back(glm::uvec2(i, (slices + 1) * slices + i));
+  }
 
-  glm::mat4 rot(1.0f);
-  rot = glm::rotate(rot, glm::radians(90.f), glm::vec3(0.0f, 1.0f, 0.0f));
-  GLuint gMat = pProgram.getUniformLocaiton("transform");
-  GLuint cMat = pProgram.getUniformLocaiton("camMatrix");
-  float deg = 1;
+  Program gridProgram("backend/shaders/gridVert.glsl", "backend/shaders/gridFrag.glsl");
+
+  VertexArray gridVAO;
+  gridVAO.bind();
+
+  VertexBuffer gridVBO((uint8_t*)glm::value_ptr(vertices[0]), vertices.size() * sizeof(glm::vec3));
+  gridVBO.bind();
+
+  gridVBO.setAttribPointer(0, 3, GL_FLOAT, 3 * sizeof(float), NULL);
+
+  GLuint gridEBO;
+  glGenBuffers(1, &gridEBO);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gridEBO);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(glm::uvec2), glm::value_ptr(indices[0]), GL_STATIC_DRAW);
+
+  gridVAO.unbind();
+  gridVBO.unbind();
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+  // End of grid setup
+
+  auto orientation = glm::normalize(glm::rotate(glm::mat4(1.0f), glm::radians(-30.0f), glm::vec3(1, 0, 0)) * glm::vec4(0, 0, -1, 0));
+  Camera cam(fArgs->width, fArgs->height, 1, 100, glm::vec3(1, 5, 1), glm::vec3(0, 0, 0));
+
+  GLuint quadCameraMatrix = quadProgram.getUniformLocaiton("camMatrix");
+  GLuint quadResUniform = quadProgram.getUniformLocaiton("resolution");
+
+  GLuint gridCameraMatrix = gridProgram.getUniformLocaiton("camMatrix");
+  GLuint gridCameraPosition = gridProgram.getUniformLocaiton("camPos");
   
   while ((*keepExecuting)) {
     while (queue.size() > 0) {
       switch (queue.pop())
       {
         case GLEvent::REQUEST_FRAME: {
-          cam.updateMatrices();
-          glm::mat4 vProj = cam.getViewProjection();
-          
-          rot = glm::rotate(rot, glm::radians(deg), glm::vec3(0.0f, 1.0f, 0.0f));
 
-          glUniformMatrix4fv(gMat, 1, GL_FALSE, glm::value_ptr(rot));
-          glUniformMatrix4fv(cMat, 1, GL_FALSE, glm::value_ptr(vProj));
-          
+          // Camera stuff
+          cam.setPosition(glm::vec3(5 * sin(glfwGetTime()), 5, 5 * cos(glfwGetTime())));
+          cam.updateMatrices();
+          glm::mat4 camViewProj = cam.getViewProjection();
+
           FBO.bind();
 
-          glClearColor((GLfloat) 128/255, (GLfloat) 58/255, (GLfloat) 153/255, 1);
+          clearColor(BLACK);
           glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
           
-          glDrawElements(GL_TRIANGLES, sizeof(indices)/sizeof(GLfloat), GL_UNSIGNED_INT, 0);
+          // Render quad
+          quadVAO.bind();
+          quadProgram.bind();
+
+          // Set up uniforms
+          glUniformMatrix4fv(quadCameraMatrix, 1, GL_FALSE, glm::value_ptr(camViewProj));
+          glUniform2f(quadResUniform, fArgs->width, fArgs->height);
+
+          glDrawArrays(GL_TRIANGLES, 0, 6);
+
+          quadVAO.unbind();
+          quadProgram.unbind();
+          
+          // Render grid
+          gridVAO.bind();
+          gridProgram.bind();
+
+          // Set up uniforms
+          glUniformMatrix4fv(gridCameraMatrix, 1, GL_FALSE, glm::value_ptr(camViewProj));
+          glUniform3fv(gridCameraPosition, 1, glm::value_ptr(cam.getPosition()));
+
+          glDisable(GL_DEPTH_TEST);
+
+          glDrawElements(GL_LINES, (GLuint)indices.size() * 4, GL_UNSIGNED_INT, NULL);
+
+          glEnable(GL_DEPTH_TEST);
+
+          gridVAO.unbind();
+          gridProgram.unbind();
+
           FBO.readData(buffer, BYTES_PER_PIXEL);
-        
+          FBO.unbind();
+
           {
             std::lock_guard lock(mutex);
             eventHandled = true;
             cond.notify_one();
           }
-          
-          FBO.unbind();
-          glClearColor((GLfloat) 60/255, (GLfloat) 24/255, (GLfloat) 72/255, 1);
+
+          clearColor(BLACK);
           glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-          glDrawElements(GL_TRIANGLES, sizeof(indices)/sizeof(GLfloat), GL_UNSIGNED_INT, 0);
+          // Render quad
+          quadVAO.bind();
+          quadProgram.bind();
+
+          // Set up uniforms
+          glUniformMatrix4fv(quadCameraMatrix, 1, GL_FALSE, glm::value_ptr(camViewProj));
+          glUniform2f(quadResUniform, fArgs->width, fArgs->height);
+
+          glDrawArrays(GL_TRIANGLES, 0, 6);
+
+          quadVAO.unbind();
+          quadProgram.unbind();
+          
+
+          // Render grid
+          gridVAO.bind();
+          gridProgram.bind();
+
+          // Set up uniforms
+          glUniformMatrix4fv(gridCameraMatrix, 1, GL_FALSE, glm::value_ptr(camViewProj));
+          glUniform3fv(gridCameraPosition, 1, glm::value_ptr(cam.getPosition()));
+
+          glDisable(GL_DEPTH_TEST);
+
+          glDrawElements(GL_LINES, (GLuint)indices.size() * 4, GL_UNSIGNED_INT, NULL);
+
+          glEnable(GL_DEPTH_TEST);
+
+          gridVAO.unbind();
+          gridProgram.unbind();
 
           glfwSwapBuffers(window);
           glfwPollEvents();

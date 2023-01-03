@@ -2,7 +2,7 @@
 #include "Camera.hpp"
 
 void Camera::UpdateView() {
-    viewMatrix = glm::lookAt(position, position + orientation, up);
+    viewMatrix = glm::lookAt(position, orientation, up);
 }
 
 void Camera::UpdateProjection() {

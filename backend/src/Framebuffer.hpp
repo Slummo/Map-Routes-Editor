@@ -12,7 +12,7 @@
 typedef std::pair<uint32_t, uint32_t> Vec2u;
 
 class Framebuffer {
-    private:
+    protected:
         // Texture attachment object
         GLuint TAO;
 
@@ -122,7 +122,6 @@ class Framebuffer {
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
         };
 
-        // NOTE: If prevously bound, the framebuffer will have to be rebound after invoking this function
         void changeDimentions(size_t newWidth, size_t newHeight);
 
         // Read pixel data and return a buffer, depending on the options argument, the buffer size can either be width x height x 3 if GL_RGB is selected or width x height x 4 if GL_RGBA is selected
@@ -138,6 +137,45 @@ class Framebuffer {
             return height;
         };
 };
+
+class MultisampledFramebuffer : public Framebuffer {
+    private:
+        GLuint samples;
+
+    public:
+        MultisampledFramebuffer(size_t _width, size_t _height, GLuint samples) : samples(samples) {
+            width = _width;
+            height = _height;
+            if (samples == 0) {
+                return;
+            }
+            
+            glGenFramebuffers(1, &id);
+
+            glGenTextures(1, &TAO);
+            glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, TAO);
+            glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, GL_RGB, (GLsizei) width, (GLsizei) height, GL_TRUE);
+            glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+            glGenRenderbuffers(1, &RBO);
+            glBindRenderbuffer(GL_RENDERBUFFER, RBO);
+            glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_DEPTH24_STENCIL8, (GLsizei) width, (GLsizei) height);
+            glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+            // Same as for the textures, keep the reference to the last bound framebuffer
+            GLint boundFBO;
+            glGetIntegerv(GL_FRAMEBUFFER_BINDING, &boundFBO);
+
+            glBindFramebuffer(GL_FRAMEBUFFER, id);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, TAO, 0);
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
+
+            glBindFramebuffer(GL_FRAMEBUFFER, boundFBO);
+        };
+
+        void changeDimentions(size_t newWidth, size_t newHeight);
+}; 
 
 
 #endif

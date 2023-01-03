@@ -4,8 +4,6 @@ const addon = require("./backend/build/Release/addon")
 const { ipcMain, BrowserWindow, app, screen } = require('electron');
 const WebSocket = require("ws");
 
-const wss = new WebSocket.Server( {port: 1010} )
-
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -24,16 +22,6 @@ const createWindow = () => {
 }
 
 app.whenReady().then(() => {createWindow();})
-
-wss.on("connection", function (w) {
-    w.on("message", function (data) {
-        var start = performance.now()
-        var buf = new Uint8Array(addon.loadFrame());
-        w.send(buf.buffer)
-        var stop = performance.now()
-        console.log("it took", stop-start, "ms")
-    })
-})
 
 app.on('window-all-closed', () => {
     addon.stopEngine()

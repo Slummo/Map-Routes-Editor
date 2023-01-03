@@ -15,8 +15,6 @@ class VertexArray {
 
         inline void bind() { glBindVertexArray(m_id); };
         inline void unbind() { glBindVertexArray(0); };
-
-
 };
 
 #endif
