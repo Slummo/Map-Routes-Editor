@@ -21,8 +21,10 @@
 #include "Program.hpp"
 #include "Texture.hpp"
 #include "Camera.hpp"
-#include "VertexBuffer.hpp"
+#include "Buffer.hpp"
+#include "Renderer.hpp"
 #include "VertexArray.hpp"
+#include "Color.hpp"
 
 typedef void *LPVOID;
 typedef uint8_t BOOL;
@@ -31,6 +33,11 @@ typedef void (*LPTHREADROUTINE)(LPVOID, LPBOOL);
 typedef struct {
     size_t& width;
     size_t& height;
+    size_t& cameraX;
+    size_t& cameraZ;
+    float& camTheta;
+    uint8_t*& buffer;
+    std::string& mapPath;
     GLEventQueue& queue;
 } GLThreadArgs;
 
@@ -42,23 +49,15 @@ void _CheckGLError(const char* file, int line);
 
 GLFWwindow* gl_renderWndw(const char* name, Vec2u size);
 
-class Color {
-    public:
-        uint8_t r;
-        uint8_t g;
-        uint8_t b;
-        uint8_t a;
-
-        Color(uint8_t r, uint8_t b, uint8_t g, uint8_t a) : r(r), g(g), b(b), a(a) {};
-        Color(const Color& other) : r(other.r), g(other.g), b(other.b), a(other.a) {}; 
-
-        Color() : r(0), g(0), b(0), a(0) {};
+enum class RenderTarget {
+    STARTUP_ANIMATION = 0,
+    IDLE_MENU,
+    MAP, 
 };
 
-const Color WHITE = Color(1, 1, 1, 1);
-const Color BLACK = Color(0, 0, 0, 1);
-
 void clearColor(Color color);
+VertexArray createGrid(float gridSize, int tiles);
+VertexArray createQuad(float quadSize);
 
 class OpenGLThread : public Napi::AsyncWorker {
     public:

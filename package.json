@@ -19,6 +19,8 @@
     "node-gyp": "^9.3.0"
   },
   "dependencies": {
+    "binaryjs": "^0.2.1",
+    "electron-share-memory": "^1.0.1",
     "node-addon-api": "^5.0.0",
     "ws": "^8.11.0"
   }
