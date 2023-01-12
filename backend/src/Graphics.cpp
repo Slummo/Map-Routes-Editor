@@ -27,27 +27,6 @@ GLFWwindow* gl_renderWndw(const char* name, Vec2u size) {
     return window;
 }
 
-void _CheckGLError(const char* file, int line)
-{
-    GLenum err ( glGetError() );
-
-    while ( err != GL_NO_ERROR )
-    {
-        std::string error;
-        switch ( err )
-        {
-            case GL_INVALID_OPERATION:  error="INVALID_OPERATION";      break;
-            case GL_INVALID_ENUM:       error="INVALID_ENUM";           break;
-            case GL_INVALID_VALUE:      error="INVALID_VALUE";          break;
-            case GL_OUT_OF_MEMORY:      error="OUT_OF_MEMORY";          break;
-            case GL_INVALID_FRAMEBUFFER_OPERATION:  error="INVALID_FRAMEBUFFER_OPERATION";  break;
-        }
-        std::cout << "GL_" << error.c_str() << " - " << file << ":" << line << std::endl;
-        err = glGetError();
-    }
-    return;
-}
-
 void clearColor(Color color) {
     glClearColor((GLfloat) color.r/255, (GLfloat) color.g/255, (GLfloat) color.b/255, (GLfloat) color.a/255);
 }
@@ -75,7 +54,7 @@ VertexArray createGrid(float gridSize, int tiles) {
   };
   gridVBO->setLayout(layout);
 
-  std::shared_ptr<IndexBuffer> gridEBO = std::make_shared<IndexBuffer>((void*)glm::value_ptr(indices[0]), indices.size());
+  std::shared_ptr<IndexBuffer> gridEBO = std::make_shared<IndexBuffer>((void*)glm::value_ptr(indices[0]), indices.size() * 2);
 
   VertexArray gridVAO;
   gridVAO.addVertexBuffer(gridVBO);

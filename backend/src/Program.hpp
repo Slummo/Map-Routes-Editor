@@ -38,12 +38,12 @@ static uint32_t ShaderDataTypeToSize(ShaderDataType t) {
 static GLenum ShaderDataTypeToGLType(ShaderDataType t) {
     switch(t) {
         case ShaderDataType::Float:     return GL_FLOAT;
-        case ShaderDataType::Float2:    return GL_FLOAT_VEC2;
-        case ShaderDataType::Float3:    return GL_FLOAT_VEC3;
-        case ShaderDataType::Float4:    return GL_FLOAT_VEC4;
-        case ShaderDataType::Mat2:      return GL_FLOAT_MAT2;
-        case ShaderDataType::Mat3:      return GL_FLOAT_MAT3;
-        case ShaderDataType::Mat4:      return GL_FLOAT_MAT4;
+        case ShaderDataType::Float2:    return GL_FLOAT;
+        case ShaderDataType::Float3:    return GL_FLOAT;
+        case ShaderDataType::Float4:    return GL_FLOAT;
+        case ShaderDataType::Mat2:      return GL_FLOAT;
+        case ShaderDataType::Mat3:      return GL_FLOAT;
+        case ShaderDataType::Mat4:      return GL_FLOAT;
         case ShaderDataType::Int:       return GL_INT;
         case ShaderDataType::Uint:      return GL_UNSIGNED_INT;
 

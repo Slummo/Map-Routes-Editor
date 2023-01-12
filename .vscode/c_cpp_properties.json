@@ -5,7 +5,8 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/backend/include",
-                "C:\\Users\\Ilias\\AppData\\Local\\node-gyp\\Cache\\18.12.1\\include\\node"
+                "C:\\Users\\Ilias\\AppData\\Local\\node-gyp\\Cache\\18.12.1\\include\\node",
+                "C:\\Users\\laila\\AppData\\Local\\node-gyp\\Cache\\18.12.1\\include\\node"
             ],
             "defines": [
                 "_DEBUG",

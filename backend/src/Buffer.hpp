@@ -16,7 +16,7 @@ struct VertexBufferElement {
     VertexBufferElement(const std::string& _name, ShaderDataType _type, bool _normalized) : 
     name(_name), type(_type), size(ShaderDataTypeToSize(_type)), offset(0), normalized(_normalized) {};
 
-    uint32_t getElementCount() {
+    uint32_t getElementCount() const {
         switch (type) {
             case ShaderDataType::Float:     return 1;
             case ShaderDataType::Float2:    return 2;

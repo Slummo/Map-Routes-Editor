@@ -43,10 +43,6 @@ typedef struct {
 
 typedef std::pair<uint32_t, uint32_t> Vec2u;
 
-#define CheckGLError() _CheckGLError(__FILE__, __LINE__)
-
-void _CheckGLError(const char* file, int line);
-
 GLFWwindow* gl_renderWndw(const char* name, Vec2u size);
 
 enum class RenderTarget {

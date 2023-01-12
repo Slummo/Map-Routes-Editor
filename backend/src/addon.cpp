@@ -37,10 +37,9 @@ void OpenGLEngine(LPVOID args, LPBOOL keepExecuting) {
   
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  glEnable(GL_TEXTURE_2D); 
   glEnable(GL_LINE_SMOOTH);
   glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-
+  
   Framebuffer FBO((fArgs->width), (fArgs->height));
 
   Program quadProgram("backend/shaders/quadVert.glsl", "backend/shaders/quadFrag.glsl");
@@ -68,8 +67,8 @@ void OpenGLEngine(LPVOID args, LPBOOL keepExecuting) {
   GLuint line = 45;
   GLuint animationFrame = 0;
 
-  Texture* Map;
-  VertexBuffer* mapVertices;
+  Texture* Map = nullptr;
+  VertexBuffer* mapVertices = nullptr;
   
   while (queue.size() > 0 || (*keepExecuting)) {
 
@@ -100,7 +99,6 @@ void OpenGLEngine(LPVOID args, LPBOOL keepExecuting) {
                 glDrawArrays(GL_TRIANGLES, 0, 6);
                 animationQuadProgram.unbind();
                 
-                quadVAO.unbind();
                 line++;
               }
 
@@ -151,47 +149,9 @@ void OpenGLEngine(LPVOID args, LPBOOL keepExecuting) {
             FBO.bind();
 
             clearColor(BLACK);
+            //glClearColor(1, 1, 1, 1);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
               
-            // Render quad
-            quadVAO.bind();
-            quadProgram.bind();
-
-            // Set up uniforms
-            glUniformMatrix4fv(quadCameraMatrix, 1, GL_FALSE, glm::value_ptr(camViewProj));
-            glUniform2f(quadResUniform, fArgs->width, fArgs->height);
-
-            glDrawElements(GL_TRIANGLES, quadVAO.getIndexBuffer()->getCount(), GL_UNSIGNED_INT, NULL);
-              
-            // Render grid
-            gridVAO.bind();
-            gridProgram.bind();
-
-            // Set up uniforms
-            glUniformMatrix4fv(gridCameraMatrix, 1, GL_FALSE, glm::value_ptr(camViewProj));
-            glUniform3fv(gridCameraPosition, 1, glm::value_ptr(cam.getPosition()));
-
-            glDisable(GL_DEPTH_TEST);
-            
-            glDrawElements(GL_LINES, gridVAO.getEBO().getSize() / 4, GL_UNSIGNED_INT, NULL);
-
-            glEnable(GL_DEPTH_TEST);
-
-            gridVAO.unbind();
-            gridProgram.unbind();
-
-            FBO.readData(buffer, BYTES_PER_PIXEL);
-            FBO.unbind();
-
-            {
-              std::lock_guard lock(mutex);
-              eventHandled = true;
-              cond.notify_one();
-            }
-
-            clearColor(BLACK);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
             // Render quad
             quadVAO.bind();
             quadProgram.bind();
@@ -201,11 +161,7 @@ void OpenGLEngine(LPVOID args, LPBOOL keepExecuting) {
             glUniform2f(quadResUniform, fArgs->width, fArgs->height);
 
             glDrawArrays(GL_TRIANGLES, 0, 6);
-
-            quadVAO.unbind();
-            quadProgram.unbind();
               
-
             // Render grid
             gridVAO.bind();
             gridProgram.bind();
@@ -216,12 +172,18 @@ void OpenGLEngine(LPVOID args, LPBOOL keepExecuting) {
 
             glDisable(GL_DEPTH_TEST);
 
-            glDrawElements(GL_LINES, gridVAO.getEBO().getSize() / 4, GL_UNSIGNED_INT, NULL);
+            glDrawElements(GL_LINES, gridVAO.getIndexBuffer()->getCount(), GL_UNSIGNED_INT, NULL);
 
             glEnable(GL_DEPTH_TEST);
 
-            gridVAO.unbind();
-            gridProgram.unbind();
+            FBO.readData(buffer, BYTES_PER_PIXEL);
+            FBO.unbind();
+
+            {
+              std::lock_guard lock(mutex);
+              eventHandled = true;
+              cond.notify_one();
+            }
 
           break;
           }

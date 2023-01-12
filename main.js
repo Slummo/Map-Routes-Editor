@@ -2,7 +2,6 @@
 const path = require('path')
 const addon = require("./backend/build/Release/addon")
 const { ipcMain, BrowserWindow, app, screen } = require('electron');
-const WebSocket = require("ws");
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));

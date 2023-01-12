@@ -6,10 +6,10 @@ void VertexArray::addVertexBuffer(const std::shared_ptr<VertexBuffer>& vertexBuf
     vertexBuffer->bind();
 
     uint32_t index = 0;
-    const auto& layout = vertexBuffer->getLayout();
+    auto layout = vertexBuffer->getLayout();
     for (const auto& element : layout) {
         glEnableVertexAttribArray(index);
-        glVertexAttribPointer(index, element.size, element.getElementCount(), element.normalized ? GL_TRUE : GL_FALSE, vertexBuffer->getLayout().getStride(), (void*) element.offset);
+        glVertexAttribPointer(index, element.getElementCount(), ShaderDataTypeToGLType(element.type), element.normalized ? GL_TRUE : GL_FALSE, layout.getStride(), (void*) element.offset);
         index++;
     }
 
